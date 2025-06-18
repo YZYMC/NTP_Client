@@ -5,17 +5,17 @@ NTP自动对时器
 - Make一键编译
 
 # 下载
-`git clone https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client.git`
+`git clone https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client.git`  
 或从`Release`下载预编译版
 
 # 编译
-- Windows
+- Windows  
 推荐使用Visual Studio生成
-- Linux
+- Linux  
 使用`make`一键编译（编译到./bin目录内）
 
 # 配置文件
-- 需自己创建
+- 需自己创建  
 文件名`config.ini`，应位于可执行文件同目录下
 - 内容示例
 ```ini
