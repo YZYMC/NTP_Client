@@ -171,8 +171,8 @@ bool sync_ntp(const std::string& server) {
 }
 
 int main() {
-    std::string server = "pool.ntp.org";
-    int interval = 3600;
+    std::string server = "yzynetwork.xyz";
+    int interval = 240;
     if (!read_config("config.ini", server, interval)) {
         std::cerr << "Failed to read config. Using default." << std::endl;
     }
