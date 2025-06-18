@@ -20,6 +20,8 @@
 #include <thread>
 #include <cstring>
 #include <ctime>
+#include <sstream>
+#include <algorithm>
 
 constexpr unsigned long long NTP_TIMESTAMP_DELTA = 2208988800ull;
 
@@ -41,17 +43,32 @@ struct NTPPacket {
     uint32_t txTm_f = 0;
 };
 
+std::string trim(const std::string& s) {
+    size_t start = s.find_first_not_of(" \t\r\n");
+    size_t end = s.find_last_not_of(" \t\r\n");
+    return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
+}
+
 bool read_config(const std::string& filename, std::string& server, int& interval) {
     std::ifstream file(filename);
     if (!file.is_open()) return false;
+
+    std::string section;
     std::string line;
     while (std::getline(file, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#' || line[0] == ';') continue;
+        if (line.front() == '[' && line.back() == ']') {
+            section = line.substr(1, line.size() - 2);
+            continue;
+        }
         size_t pos = line.find('=');
         if (pos == std::string::npos) continue;
-        std::string key = line.substr(0, pos);
-        std::string value = line.substr(pos + 1);
-        if (key == "server") server = value;
-        else if (key == "interval") interval = std::stoi(value);
+        std::string key = trim(line.substr(0, pos));
+        std::string value = trim(line.substr(pos + 1));
+
+        if ((section.empty() || section == "config") && key == "server") server = value;
+        else if ((section.empty() || section == "config") && key == "interval") interval = std::stoi(value);
     }
     return true;
 }
@@ -158,6 +175,9 @@ int main() {
     int interval = 3600;
     if (!read_config("config.ini", server, interval)) {
         std::cerr << "Failed to read config. Using default." << std::endl;
+    }
+    else {
+        std::cout << "Config loaded: server=" << server << ", interval=" << interval << std::endl;
     }
     std::cout << "Starting NTP sync with server: " << server << ", interval: " << interval << "s\n";
     while (true) {
