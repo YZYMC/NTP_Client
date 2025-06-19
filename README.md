@@ -5,8 +5,12 @@ NTP自动对时器
 - Make一键编译
 
 # 下载
+- 源代码  
+`git clone https://github.com/YZYMC/NTP_Client.git`  
+或国内镜像：  
 `git clone https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client.git`  
-或从`Release`下载预编译版
+- 预编译版  
+从`Release`下载预编译版
 
 # 编译
 - Windows  
