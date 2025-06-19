@@ -3,6 +3,8 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
 #include <windows.h>
+#include <fcntl.h>
+#include <io.h>
 #pragma comment(lib, "ws2_32.lib")
 #else
 #include <sys/socket.h>
@@ -22,20 +24,21 @@
 #include <ctime>
 #include <sstream>
 #include <algorithm>
-
+#include <clocale>
 #include <map>
+#include <cstdlib>
 
 enum class Lang { EN, ZH };
 Lang currentLang = Lang::EN;
 
 std::map<std::string, std::string> zh_CN = {
-    {"starting", "Æô¶¯ NTP Í¬²½£¬·şÎñÆ÷£º"},
-    {"interval", "¼ä¸ô£¨Ãë£©£º"},
-    {"sync_ok", "Ê±¼äÍ¬²½³É¹¦£º"},
-    {"sync_fail", "Í¬²½Ê§°Ü£¬ÉÔºóÖØÊÔ¡£"},
-    {"set_time_fail", "ÉèÖÃÏµÍ³Ê±¼äÊ§°Ü£¬ÇëÒÔ¹ÜÀíÔ±È¨ÏŞÔËĞĞ¡£"},
-    {"read_config_fail", "¶ÁÈ¡ÅäÖÃÊ§°Ü£¬Ê¹ÓÃÄ¬ÈÏÖµ¡£"},
-    {"config_loaded", "ÅäÖÃÒÑ¼ÓÔØ£º·şÎñÆ÷µØÖ·£º"},
+    {"starting", "å¯åŠ¨ NTP åŒæ­¥ï¼ŒæœåŠ¡å™¨ï¼š"},
+    {"interval", "é—´éš”ï¼ˆç§’ï¼‰ï¼š"},
+    {"sync_ok", "æ—¶é—´åŒæ­¥æˆåŠŸï¼š"},
+    {"sync_fail", "åŒæ­¥å¤±è´¥ï¼Œç¨åé‡è¯•ã€‚"},
+    {"set_time_fail", "è®¾ç½®ç³»ç»Ÿæ—¶é—´å¤±è´¥ï¼Œè¯·ä»¥ç®¡ç†å‘˜æƒé™è¿è¡Œã€‚"},
+    {"read_config_fail", "è¯»å–é…ç½®å¤±è´¥ï¼Œä½¿ç”¨é»˜è®¤å€¼ã€‚"},
+    {"config_loaded", "é…ç½®å·²åŠ è½½ï¼šæœåŠ¡å™¨åœ°å€ï¼š"},
 };
 
 std::map<std::string, std::string> en_US = {
@@ -54,21 +57,26 @@ const std::string& t(const std::string& key) {
 }
 
 #ifdef _WIN32
-#include <locale>
 Lang detect_language() {
     LANGID langid = GetUserDefaultUILanguage();
-    if (langid == 0x0804 || langid == 0x0404) return Lang::ZH; // ¼òÌå/·±ÌåÖĞÎÄ
+    if (langid == 0x0804 || langid == 0x0404) return Lang::ZH;
     return Lang::EN;
 }
+void enable_utf8_console() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+    // ä¸å†è°ƒç”¨ _setmodeï¼Œä¿æŒ std::cout æ­£å¸¸ä½¿ç”¨
+}
 #else
-#include <cstdlib>
 Lang detect_language() {
     const char* lang = getenv("LANG");
     if (lang && std::string(lang).find("zh") != std::string::npos) return Lang::ZH;
     return Lang::EN;
 }
+void enable_utf8_console() {
+    // Linux é»˜è®¤æ”¯æŒ UTF-8ï¼Œæ— éœ€è®¾ç½®
+}
 #endif
-
 
 constexpr unsigned long long NTP_TIMESTAMP_DELTA = 2208988800ull;
 
@@ -129,7 +137,7 @@ bool sync_ntp(const std::string& server) {
     sockaddr_in sa{};
     hostent* he = gethostbyname(server.c_str());
     if (!he) {
-        std::cerr << "" << server << std::endl;
+        std::cerr << "Failed to resolve server: " << server << std::endl;
         return false;
     }
     memcpy(&sa.sin_addr, he->h_addr, he->h_length);
@@ -208,7 +216,7 @@ bool sync_ntp(const std::string& server) {
     tv.tv_sec = txTm;
     tv.tv_usec = 0;
     if (settimeofday(&tv, nullptr) < 0) {
-        std::cerr << "Failed to set system time. Run as root." << std::endl;
+        std::cerr << t("set_time_fail") << std::endl;
         return false;
     }
 #endif
@@ -218,6 +226,8 @@ bool sync_ntp(const std::string& server) {
 }
 
 int main() {
+    std::setlocale(LC_ALL, "");
+    enable_utf8_console();
     currentLang = detect_language();
 
     std::string server = "yzynetwork.xyz";
@@ -240,4 +250,3 @@ int main() {
 
     return 0;
 }
-
