@@ -70,7 +70,11 @@ void enable_utf8_console() {
 #else
 Lang detect_language() {
     const char* lang = getenv("LANG");
-    if (lang && std::string(lang).find("zh") != std::string::npos) return Lang::ZH;
+    if (lang) {
+        std::string langStr = lang;
+        std::transform(langStr.begin(), langStr.end(), langStr.begin(), ::tolower);
+        if (langStr.find("zh") != std::string::npos) return Lang::ZH;
+    }
     return Lang::EN;
 }
 void enable_utf8_console() {
