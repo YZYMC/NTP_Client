@@ -3,6 +3,8 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <winsock2.h>
 #include <windows.h>
+#include <fcntl.h>
+#include <io.h>
 #pragma comment(lib, "ws2_32.lib")
 #else
 #include <sys/socket.h>
@@ -22,6 +24,63 @@
 #include <ctime>
 #include <sstream>
 #include <algorithm>
+#include <clocale>
+#include <map>
+#include <cstdlib>
+
+enum class Lang { EN, ZH };
+Lang currentLang = Lang::EN;
+
+std::map<std::string, std::string> zh_CN = {
+    {"starting", "启动 NTP 同步，服务器："},
+    {"interval", "间隔（秒）："},
+    {"sync_ok", "时间同步成功："},
+    {"sync_fail", "同步失败，稍后重试。"},
+    {"set_time_fail", "设置系统时间失败，请以管理员权限运行。"},
+    {"read_config_fail", "读取配置失败，使用默认值。"},
+    {"config_loaded", "配置已加载：服务器地址："},
+};
+
+std::map<std::string, std::string> en_US = {
+    {"starting", "Starting NTP sync. Server: "},
+    {"interval", " interval (seconds)"},
+    {"sync_ok", "Time synchronized successfully: "},
+    {"sync_fail", "Sync failed. Will retry later."},
+    {"set_time_fail", "Failed to set system time. Please run as Administrator."},
+    {"read_config_fail", "Failed to read config. Using default."},
+    {"config_loaded", "Config loaded: server="},
+};
+
+const std::string& t(const std::string& key) {
+    if (currentLang == Lang::ZH && zh_CN.count(key)) return zh_CN[key];
+    return en_US[key];
+}
+
+#ifdef _WIN32
+Lang detect_language() {
+    LANGID langid = GetUserDefaultUILanguage();
+    if (langid == 0x0804 || langid == 0x0404) return Lang::ZH;
+    return Lang::EN;
+}
+void enable_utf8_console() {
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+    // 不再调用 _setmode，保持 std::cout 正常使用
+}
+#else
+Lang detect_language() {
+    const char* lang = getenv("LANG");
+    if (lang) {
+        std::string langStr = lang;
+        std::transform(langStr.begin(), langStr.end(), langStr.begin(), ::tolower);
+        if (langStr.find("zh") != std::string::npos) return Lang::ZH;
+    }
+    return Lang::EN;
+}
+void enable_utf8_console() {
+    // Linux 默认支持 UTF-8，无需设置
+}
+#endif
 
 constexpr unsigned long long NTP_TIMESTAMP_DELTA = 2208988800ull;
 
@@ -152,7 +211,7 @@ bool sync_ntp(const std::string& server) {
     st.wSecond = gmt.tm_sec;
     st.wMilliseconds = 0;
     if (!SetSystemTime(&st)) {
-        std::cerr << "Failed to set system time. Run as Administrator." << std::endl;
+        std::cerr << t("set_time_fail") << std::endl;
         return false;
     }
 #else
@@ -161,28 +220,37 @@ bool sync_ntp(const std::string& server) {
     tv.tv_sec = txTm;
     tv.tv_usec = 0;
     if (settimeofday(&tv, nullptr) < 0) {
-        std::cerr << "Failed to set system time. Run as root." << std::endl;
+        std::cerr << t("set_time_fail") << std::endl;
         return false;
     }
 #endif
 
-    std::cout << "Time synchronized successfully: " << std::asctime(&gmt);
+    std::cout << t("sync_ok") << std::asctime(&gmt);
     return true;
 }
 
 int main() {
+    std::setlocale(LC_ALL, "");
+    enable_utf8_console();
+    currentLang = detect_language();
+
     std::string server = "yzynetwork.xyz";
-    int interval = 240;
+    int interval = 3600;
     if (!read_config("config.ini", server, interval)) {
-        std::cerr << "Failed to read config. Using default." << std::endl;
+        std::cerr << t("read_config_fail") << std::endl;
     }
     else {
-        std::cout << "Config loaded: server=" << server << ", interval=" << interval << std::endl;
+        std::cout << t("config_loaded") << server << ", interval=" << interval << std::endl;
     }
-    std::cout << "Starting NTP sync with server: " << server << ", interval: " << interval << "s\n";
+
+    std::cout << t("starting") << server << ", " << t("interval") << interval << std::endl;
+
     while (true) {
-        sync_ntp(server);
+        if (!sync_ntp(server)) {
+            std::cerr << t("sync_fail") << std::endl;
+        }
         std::this_thread::sleep_for(std::chrono::seconds(interval));
     }
+
     return 0;
 }
