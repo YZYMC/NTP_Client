@@ -24,3 +24,10 @@ endif()
 if (MSVC)
     target_compile_options(ntp_client PRIVATE /source-charset:utf-8)
 endif()
+
+# 复制配置文件到输出目录
+add_custom_command(TARGET ntp_client POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_SOURCE_DIR}/config.ini"
+        "$<TARGET_FILE_DIR:ntp_client>/config.ini"
+)
