@@ -16,11 +16,20 @@ NTP自动对时器
 - Windows  
 推荐使用Visual Studio生成
 - Linux  
-使用`make`一键编译（编译到`./bin`目录内）
-
+使用CMake编译
+```bash
+cd NTP_Client/
+mkdir build
+cd build
+cmake ..
+make
+# Run
+cd bin
+./ntp_client
+```
 # 配置文件
-- Linux使用`make config.ini`自动创建默认配置到`./bin`目录
-- Windows需手动创建，参考下文
+- Linux在使用CMake编译时自动创建
+- Windows使用VS需手动创建，参考下文
 - 文件名`config.ini`，应位于当前目录下
 - 内容示例
 ```ini
