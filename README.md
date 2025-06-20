@@ -4,6 +4,10 @@ NTP自动对时器
 - 自动对时
 - Make一键编译
 
+项目仓库地址：  
+- [GitHub](https://github.com/YZYMC/NTP_Client/)
+- [国内镜像](https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client)
+
 # 下载
 - 源代码  
 `git clone https://github.com/YZYMC/NTP_Client.git`  
@@ -30,8 +34,8 @@ cd bin
 # 配置文件
 - Linux在使用CMake编译时自动创建
 - Windows使用VS需手动创建，参考下文
-- 文件名`config.ini`，应位于当前目录下
-- 内容示例
+文件名`config.ini`，应位于当前目录下  
+内容示例  
 ```ini
 ; NTP client configuration
 [config]
