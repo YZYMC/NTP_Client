@@ -30,9 +30,12 @@
 
 enum class Lang { EN, ZH };
 Lang currentLang = Lang::EN;
+bool syncOnce = false;
+bool langSetExplicitly = false;
 
 // 简体中文 zh_CN
-std::map<std::string, std::string> zh_CN = {
+std::map<std::string, std::string> zh_CN =
+{
     {"starting", "启动 NTP 同步，服务器："},
     {"interval", "间隔（秒）："},
     {"sync_ok", "时间同步成功："},
@@ -44,7 +47,8 @@ std::map<std::string, std::string> zh_CN = {
 };
 
 // 英语（美国） en_US
-std::map<std::string, std::string> en_US = {
+std::map<std::string, std::string> en_US =
+{
     {"starting", "Starting NTP sync. Server: "},
     {"interval", " interval (seconds)"},
     {"sync_ok", "Time synchronized successfully: "},
@@ -55,14 +59,12 @@ std::map<std::string, std::string> en_US = {
     {"log_fail", "Failed to write log file."},
 };
 
-// 根据语言选择字符串
 const std::string& t(const std::string& key) {
     if (currentLang == Lang::ZH && zh_CN.count(key)) return zh_CN[key];
     return en_US[key];
 }
 
 #ifdef _WIN32
-// Windows 下检测系统语言
 Lang detect_language() {
     LANGID langid = GetUserDefaultUILanguage();
     if (langid == 0x0804 || langid == 0x0404) return Lang::ZH;
@@ -73,7 +75,6 @@ void enable_utf8_console() {
     SetConsoleCP(CP_UTF8);
 }
 #else
-// Linux 下检测系统语言
 Lang detect_language() {
     const char* lang = getenv("LANG");
     if (lang) {
@@ -90,7 +91,8 @@ void enable_utf8_console() {
 
 constexpr unsigned long long NTP_TIMESTAMP_DELTA = 2208988800ull;
 
-struct NTPPacket {
+struct NTPPacket
+{
     uint8_t li_vn_mode = 0x1B;
     uint8_t stratum = 0;
     uint8_t poll = 0;
@@ -108,9 +110,9 @@ struct NTPPacket {
     uint32_t txTm_f = 0;
 };
 
-// 日志写入函数
-void write_log(const std::string& log_line) {
-    std::ofstream log_file("sync_log.txt", std::ios::app); // 以追加模式打开文件
+void write_log(const std::string& log_line)
+{
+    std::ofstream log_file("sync_log.txt", std::ios::app);
     if (!log_file) {
         std::cerr << t("log_fail") << std::endl;
         return;
@@ -178,7 +180,8 @@ bool sync_ntp(const std::string& server) {
     NTPPacket packet{};
     packet.li_vn_mode = 0x1B;
 
-    if (sendto(sock, (char*)&packet, sizeof(packet), 0, (sockaddr*)&sa, sizeof(sa)) < 0) {
+    if (sendto(sock, (char*)&packet, sizeof(packet), 0, (sockaddr*)&sa, sizeof(sa)) < 0)
+    {
         std::cerr << "Failed to send NTP packet" << std::endl;
 #ifdef _WIN32
         closesocket(sock);
@@ -195,7 +198,8 @@ bool sync_ntp(const std::string& server) {
     socklen_t srclen = sizeof(src);
 #endif
 
-    if (recvfrom(sock, (char*)&packet, sizeof(packet), 0, (sockaddr*)&src, &srclen) < 0) {
+    if (recvfrom(sock, (char*)&packet, sizeof(packet), 0, (sockaddr*)&src, &srclen) < 0)
+    {
         std::cerr << "Failed to receive NTP packet" << std::endl;
 #ifdef _WIN32
         closesocket(sock);
@@ -247,28 +251,57 @@ bool sync_ntp(const std::string& server) {
     return true;
 }
 
-int main() {
+int main(int argc, char* argv[])
+{
     std::setlocale(LC_ALL, "");
     enable_utf8_console();
-    currentLang = detect_language();
+
+    for (int i = 1; i < argc; ++i)
+    {
+        std::string arg = argv[i];
+        if (arg == "-sync_once")
+        {
+            syncOnce = true;
+        }
+        else if (arg == "-lang" && i + 1 < argc)
+        {
+            std::string lang = argv[++i];
+            std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
+            if (lang == "zh") currentLang = Lang::ZH;
+            else currentLang = Lang::EN;
+            langSetExplicitly = true;
+        }
+    }
+
+    if (!langSetExplicitly)
+    {
+        currentLang = detect_language();
+    }
+
+
     write_log("Start up\n");
     std::string server = "yzynetwork.xyz";
     int interval = 3600;
-    if (!read_config("config.ini", server, interval)) {
+    if (!read_config("config.ini", server, interval))
+    {
         std::cerr << t("read_config_fail") << std::endl;
     }
-    else {
+    else
+    {
         std::cout << t("config_loaded") << server << ", interval=" << interval << std::endl;
     }
 
     std::cout << t("starting") << server << ", " << t("interval") << interval << std::endl;
 
-    while (true) {
-        if (!sync_ntp(server)) {
+    do
+    {
+        if (!sync_ntp(server))
+        {
             std::cerr << t("sync_fail") << std::endl;
         }
+        if (syncOnce) break;
         std::this_thread::sleep_for(std::chrono::seconds(interval));
-    }
+    } while (true);
 
     return 0;
 }
