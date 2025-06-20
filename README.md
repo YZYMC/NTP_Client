@@ -10,7 +10,7 @@ NTP自动对时器
 
 # 下载
 - 源代码  
-`git clone https://github.com/YZYMC/NTP_Client.git`  
+`git clone https://github.com/YZYNetwork/NTP_Client.git`  
 或国内镜像：  
 `git clone https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client.git`  
 - 预编译版  
