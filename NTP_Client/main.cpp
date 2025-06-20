@@ -31,6 +31,7 @@
 enum class Lang { EN, ZH };
 Lang currentLang = Lang::EN;
 
+// 简体中文 zh_CN
 std::map<std::string, std::string> zh_CN = {
     {"starting", "启动 NTP 同步，服务器："},
     {"interval", "间隔（秒）："},
@@ -39,8 +40,10 @@ std::map<std::string, std::string> zh_CN = {
     {"set_time_fail", "设置系统时间失败，请以管理员权限运行。"},
     {"read_config_fail", "读取配置失败，使用默认值。"},
     {"config_loaded", "配置已加载：服务器地址："},
+    {"log_fail", "无法写入日志文件。"},
 };
 
+// 英语（美国） en_US
 std::map<std::string, std::string> en_US = {
     {"starting", "Starting NTP sync. Server: "},
     {"interval", " interval (seconds)"},
@@ -49,14 +52,17 @@ std::map<std::string, std::string> en_US = {
     {"set_time_fail", "Failed to set system time. Please run as Administrator."},
     {"read_config_fail", "Failed to read config. Using default."},
     {"config_loaded", "Config loaded: server="},
+    {"log_fail", "Failed to write log file."},
 };
 
+// 根据语言选择字符串
 const std::string& t(const std::string& key) {
     if (currentLang == Lang::ZH && zh_CN.count(key)) return zh_CN[key];
     return en_US[key];
 }
 
 #ifdef _WIN32
+// Windows 下检测系统语言
 Lang detect_language() {
     LANGID langid = GetUserDefaultUILanguage();
     if (langid == 0x0804 || langid == 0x0404) return Lang::ZH;
@@ -65,9 +71,9 @@ Lang detect_language() {
 void enable_utf8_console() {
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
-    // 不再调用 _setmode，保持 std::cout 正常使用
 }
 #else
+// Linux 下检测系统语言
 Lang detect_language() {
     const char* lang = getenv("LANG");
     if (lang) {
@@ -101,6 +107,16 @@ struct NTPPacket {
     uint32_t txTm_s = 0;
     uint32_t txTm_f = 0;
 };
+
+// 日志写入函数
+void write_log(const std::string& log_line) {
+    std::ofstream log_file("sync_log.txt", std::ios::app); // 以追加模式打开文件
+    if (!log_file) {
+        std::cerr << t("log_fail") << std::endl;
+        return;
+    }
+    log_file << log_line;
+}
 
 std::string trim(const std::string& s) {
     size_t start = s.find_first_not_of(" \t\r\n");
@@ -226,6 +242,8 @@ bool sync_ntp(const std::string& server) {
 #endif
 
     std::cout << t("sync_ok") << std::asctime(&gmt);
+    write_log("Sync OK ");
+    write_log(std::asctime(&gmt));
     return true;
 }
 
@@ -233,7 +251,7 @@ int main() {
     std::setlocale(LC_ALL, "");
     enable_utf8_console();
     currentLang = detect_language();
-
+    write_log("Start up\n");
     std::string server = "yzynetwork.xyz";
     int interval = 3600;
     if (!read_config("config.ini", server, interval)) {
