@@ -5,14 +5,14 @@ NTP自动对时器
 - Make一键编译
 
 项目仓库地址：  
-- [GitHub](https://github.com/YZYNetwork/NTP_Client/)
-- [国内镜像](https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client)
+- [GitHub](https://github.com/YZYMC/NTP_Client/)
+- [国内镜像](https://gea.yzynetwork.xyz:28445/yzymc/NTP_Client)
 
 # 下载
 - 源代码  
-`git clone https://github.com/YZYNetwork/NTP_Client.git`  
+`git clone https://github.com/YZYMC/NTP_Client.git`  
 或国内镜像：  
-`git clone https://gea.yzynetwork.xyz:28445/YZYNetwork/NTP_Client.git`  
+`git clone https://gea.yzynetwork.xyz:28445/yzymc/NTP_Client.git`  
 - 预编译版  
 从`Release`下载预编译版
 
