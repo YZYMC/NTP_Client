@@ -1,8 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # Add source files
 add_executable(NTP_Client NTP_Client.cpp)
 
@@ -19,6 +16,6 @@ endif()
 # Copy config.ini to the output directory after build
 add_custom_command(TARGET NTP_Client POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_SOURCE_DIR}/config.ini"
+        "${CMAKE_SOURCE_DIR}/NTP_Client/config.ini"
         "$<TARGET_FILE_DIR:NTP_Client>/config.ini"
 )
