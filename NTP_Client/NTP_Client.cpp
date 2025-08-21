@@ -33,7 +33,7 @@ Lang currentLang = Lang::EN;
 bool syncOnce = false;
 bool langSetExplicitly = false;
 
-// 简体中文 zh_CN
+// zh_CN
 std::map<std::string, std::string> zh_CN =
 {
     {"starting", "启动 NTP 同步，服务器："},
@@ -46,7 +46,7 @@ std::map<std::string, std::string> zh_CN =
     {"log_fail", "无法写入日志文件。"},
 };
 
-// 英语（美国） en_US
+// en_US
 std::map<std::string, std::string> en_US =
 {
     {"starting", "Starting NTP sync. Server: "},
@@ -85,7 +85,7 @@ Lang detect_language() {
     return Lang::EN;
 }
 void enable_utf8_console() {
-    // Linux 默认支持 UTF-8，无需设置
+    // Linux/Unix typically uses UTF-8 by default
 }
 #endif
 
