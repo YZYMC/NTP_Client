@@ -1,33 +1,25 @@
 cmake_minimum_required(VERSION 3.10)
-project(NtpSyncClient LANGUAGES CXX)
+project(NTP_Client VERSION CMTv1)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 设置输出目录
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+# Add source files
+add_executable(NTP_Client NTP_Client.cpp)
 
-# 定义源文件
-set(SOURCES
-    main.cpp
-)
-
-# 添加可执行文件
-add_executable(ntp_client ${SOURCES})
-
-# Windows 特有设置
+# Windows
 if(WIN32)
-    target_link_libraries(ntp_client ws2_32)
+    target_link_libraries(NTP_Client ws2_32)
 endif()
 
-# 设置 UTF-8 编码（Windows 下防乱码）
+# Set UTF-8 encoding for source files on MSVC
 if (MSVC)
-    target_compile_options(ntp_client PRIVATE /source-charset:utf-8)
+    target_compile_options(NTP_Client PRIVATE /source-charset:utf-8)
 endif()
 
-# 复制配置文件到输出目录
-add_custom_command(TARGET ntp_client POST_BUILD
+# Copy config.ini to the output directory after build
+add_custom_command(TARGET NTP_Client POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${CMAKE_SOURCE_DIR}/config.ini"
-        "$<TARGET_FILE_DIR:ntp_client>/config.ini"
+        "$<TARGET_FILE_DIR:NTP_Client>/config.ini"
 )
